@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+	<meta charset="UTF-8">
+	<title>TikTok Translator</title>
+	<style>
+		body {
+			min-width: 340px;
+			max-width: 420px;
+			width: auto;
+			padding: 15px;
+			font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+			background-color: #0d1117;
+			color: #c9d1d9;
+			margin: 0;
+			border-radius: 8px;
+			box-sizing: border-box;
+			font-size: 14px;
+		}
+
+		h3 {
+			margin: 0 0 10px;
+			font-size: 16px;
+			color: #e6edf3;
+			text-align: center;
+			line-height: 1.4;
+		}
+
+		h3 small {
+			display: block;
+			font-weight: normal;
+			font-size: 11px;
+			color: #8b949e;
+			margin-top: 4px;
+		}
+
+		.field {
+			margin-top: 12px;
+		}
+
+		.field-label {
+			display: block;
+			margin-bottom: 4px;
+			font-size: 13px;
+			color: #b3b3b3;
+		}
+
+		select, input[type="password"], input[type="text"] {
+			width: 100%;
+			padding: 7px 8px;
+			font-size: 13px;
+			border: 1px solid #30363d;
+			border-radius: 4px;
+			background-color: #161b22;
+			color: #c9d1d9;
+			box-sizing: border-box;
+			font-family: inherit;
+			transition: border-color 0.15s, box-shadow 0.15s;
+		}
+
+		select {
+			cursor: pointer;
+		}
+
+		select:hover, input:hover {
+			border-color: #58a6ff;
+		}
+
+		select:focus, input:focus {
+			outline: none;
+			border-color: #1f6feb;
+			box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.3);
+		}
+
+		option {
+			background-color: #161b22;
+			color: #c9d1d9;
+		}
+
+		.hint {
+			margin: 4px 0 0;
+			font-size: 11px;
+			color: #8b949e;
+			line-height: 1.4;
+		}
+
+		.checkbox-field {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			font-size: 12px;
+			color: #b3b3b3;
+		}
+
+		.checkbox-field input {
+			width: auto;
+			margin: 0;
+			cursor: pointer;
+		}
+
+		.test-row {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+			margin-top: 8px;
+		}
+
+		button {
+			padding: 6px 12px;
+			font-size: 12px;
+			background-color: #21262d;
+			color: #c9d1d9;
+			border: 1px solid #30363d;
+			border-radius: 4px;
+			cursor: pointer;
+			font-family: inherit;
+			transition: background-color 0.15s, border-color 0.15s;
+		}
+
+		button:hover:not(:disabled) {
+			background-color: #30363d;
+			border-color: #58a6ff;
+		}
+
+		button:disabled {
+			opacity: 0.6;
+			cursor: wait;
+		}
+
+		.test-status {
+			font-size: 12px;
+			flex: 1;
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.test-status.ok { color: #56d364; }
+		.test-status.err { color: #f85149; }
+
+		.hidden { display: none; }
+
+		footer {
+			margin-top: 15px;
+			padding-top: 10px;
+			border-top: 1px solid #30363d;
+			font-size: 11px;
+			text-align: center;
+			color: #8b949e;
+		}
+
+		footer a {
+			color: #58a6ff;
+			text-decoration: none;
+		}
+
+		footer a:hover {
+			text-decoration: underline;
+		}
+
+		footer p {
+			margin: 3px 0;
+		}
+	</style>
+</head>
+
+<body>
+	<h3 id="mainHeading">
+		选择要翻译成的语言
+		<small id="refreshHint">切换设置无需刷新</small>
+	</h3>
+
+	<div class="field">
+		<label class="field-label" for="languageSelect">目标语言</label>
+		<select id="languageSelect">
+			<option value="zh">中文</option>
+			<option value="en">English</option>
+			<option value="ja">日本語</option>
+			<option value="ko">한국어</option>
+			<option value="vi">Tiếng Việt</option>
+			<option value="ru">Русский</option>
+			<option value="es">Español</option>
+			<option value="fr">Français</option>
+		</select>
+	</div>
+
+	<div class="field">
+		<label class="field-label" id="providerLabel" for="providerSelect">翻译服务商</label>
+		<select id="providerSelect">
+			<option value="google" id="providerOptionGoogle">Google 翻译（免费）</option>
+			<option value="gemini" id="providerOptionGemini">Gemini</option>
+			<option value="openai" id="providerOptionOpenAI">OpenAI 兼容</option>
+			<option value="anthropic" id="providerOptionAnthropic">Anthropic Claude</option>
+		</select>
+	</div>
+
+	<!-- Gemini 配置 -->
+	<div id="geminiConfig" class="hidden">
+		<div class="field">
+			<label class="field-label" for="geminiKeyInput">Gemini API Key</label>
+			<input type="password" id="geminiKeyInput" placeholder="AIza..." autocomplete="off" />
+			<p class="hint" id="geminiKeyHint">在 aistudio.google.com/apikey 获取。</p>
+		</div>
+		<div class="field">
+			<label class="field-label" for="geminiModelInput">模型名</label>
+			<input type="text" id="geminiModelInput" placeholder="gemini-2.5-flash" />
+		</div>
+	</div>
+
+	<!-- OpenAI 兼容配置 -->
+	<div id="openaiConfig" class="hidden">
+		<div class="field">
+			<label class="field-label" for="openaiEndpointInput">API Endpoint</label>
+			<input type="text" id="openaiEndpointInput" placeholder="https://api.openai.com/v1" />
+			<p class="hint" id="openaiKeyHint">兼容 OpenAI / DeepSeek / OpenRouter / 自部署等所有 OpenAI 协议端点。Endpoint 填到 /v1 即可。</p>
+		</div>
+		<div class="field">
+			<label class="field-label" for="openaiModelInput">模型名</label>
+			<input type="text" id="openaiModelInput" placeholder="gpt-4o-mini" />
+		</div>
+		<div class="field">
+			<label class="field-label" for="openaiKeyInput">API Key</label>
+			<input type="password" id="openaiKeyInput" placeholder="sk-..." autocomplete="off" />
+		</div>
+	</div>
+
+	<!-- Anthropic 配置 -->
+	<div id="anthropicConfig" class="hidden">
+		<div class="field">
+			<label class="field-label" for="anthropicKeyInput">Anthropic API Key</label>
+			<input type="password" id="anthropicKeyInput" placeholder="sk-ant-..." autocomplete="off" />
+			<p class="hint" id="anthropicKeyHint">在 console.anthropic.com 获取。</p>
+		</div>
+		<div class="field">
+			<label class="field-label" for="anthropicModelInput">模型名</label>
+			<input type="text" id="anthropicModelInput" placeholder="claude-haiku-4-5-20251001" />
+		</div>
+	</div>
+
+	<!-- 测试连接 (LLM provider 才显示) -->
+	<div id="testRow" class="test-row hidden">
+		<button id="testButton">测试连接</button>
+		<span class="test-status" id="testStatus"></span>
+	</div>
+
+	<!-- 降级选项 (LLM provider 才显示) -->
+	<div id="fallbackField" class="field hidden">
+		<label class="checkbox-field">
+			<input type="checkbox" id="fallbackCheckbox" />
+			<span id="fallbackLabel">LLM 失败时自动降级到 Google 翻译</span>
+		</label>
+	</div>
+
+	<div class="field">
+		<p class="hint" id="globalKeyHint">Key 仅保存在本地，不会同步到其它设备。</p>
+	</div>
+
+	<footer>
+		<p id="copyright">© 2025 DuckCIT (Multi-Provider Fork)</p>
+		<p><a href="https://github.com/DuckCIT/TikTok-Comment-Translator" target="_blank" id="sourceLink">GitHub 源码</a></p>
+	</footer>
+
+	<script src="../providers.js"></script>
+	<script src="popup.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,30 @@
+/* TikTok Comment Translator (Multi-Provider) - 注入样式
+ * 字体大小/粗细/行高/字距通过 JS 从同评论的"返信"按钮 computed style 复制过来,
+ * CSS 这边只管布局、颜色、交互态。
+ */
+
+.ttct-translate-button {
+	cursor: pointer;
+	display: inline;
+	white-space: nowrap;
+	margin-left: 12px;
+	color: var(--ui-text-3);
+	/* 父级是 flex 容器(DivCommentSubContentWrapper),用 align-self 而不是 vertical-align
+	 * center 让按钮在垂直方向居中,适配一级评论和二级评论两种场景
+	 * 取消 stretch 默认行为,让按钮按内容自然高度而不是被拉伸到 28px */
+	align-self: center;
+	transition: color 0.15s ease;
+	user-select: none;
+	/* font 相关属性由 JS 在挂载时根据兄弟"返信"按钮的 computed style 写入 inline style,
+	 * 所以这里不设 font-size/font-weight/font-family/line-height/letter-spacing */
+}
+
+.ttct-translate-button:hover {
+	color: var(--ui-text-1);
+}
+
+/* 翻译进行中:加点视觉提示,避免用户重复点 */
+.ttct-translate-button[data-state="loading"] {
+	opacity: 0.6;
+	cursor: progress;
+}

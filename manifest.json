@@ -1,0 +1,53 @@
+{
+    "manifest_version": 3,
+    "name": "TikTok Comment Translator (Multi-Provider)",
+    "version": "1.2.0",
+    "description": "为 TikTok 评论添加翻译按钮。支持 Google 翻译、Gemini、OpenAI 兼容端点、Anthropic Claude 等多个引擎。",
+    "permissions": [
+        "storage"
+    ],
+    "host_permissions": [
+        "https://translate.googleapis.com/*",
+        "https://generativelanguage.googleapis.com/*",
+        "https://api.anthropic.com/*"
+    ],
+    "optional_host_permissions": [
+        "*://*/*"
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": ["data/languages.json"],
+            "matches": ["<all_urls>"]
+        }
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "*://*.tiktok.com/*"
+            ],
+            "js": [
+                "providers.js",
+                "content.js"
+            ],
+            "css": [
+                "content.css"
+            ],
+            "run_at": "document_idle"
+        }
+    ],
+    "action": {
+        "default_popup": "popup/popup.html",
+        "default_icon": {
+            "16": "icons/icon16.png",
+            "32": "icons/icon32.png",
+            "48": "icons/icon48.png",
+            "128": "icons/icon128.png"
+        }
+    },
+    "icons": {
+        "16": "icons/icon16.png",
+        "32": "icons/icon32.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+    }
+}
