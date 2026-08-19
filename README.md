@@ -1,131 +1,61 @@
 # TikTok Comment Translation
 
-为 TikTok 网页端视频评论添加翻译按钮，并支持直播间聊天自动翻译。基于 [DuckCIT/TikTok-Comment-Translator](https://github.com/DuckCIT/TikTok-Comment-Translator) 的修改版。
+为 TikTok 网页版评论添加翻译按钮，并支持直播间聊天自动翻译。Chrome / Edge Manifest V3 浏览器扩展。
 
-## 支持的翻译服务商
+基于 [DuckCIT/TikTok-Comment-Translator](https://github.com/DuckCIT/TikTok-Comment-Translator) 修改，新增多翻译引擎、直播间翻译和连接测试等功能。
 
-- **Google 翻译**：免费，无需配置
-- **Gemini**：需自填 key，默认 `gemini-2.5-flash`
-- **OpenAI 兼容**：自填 endpoint + model + key，覆盖 OpenAI 官方 / DeepSeek / OpenRouter / SiliconFlow / 自部署 vLLM / Ollama 等所有 OpenAI 协议端点
-- **Anthropic Claude**：需自填 key，默认 `claude-haiku-4-5-20251001`
+## 功能
 
-## v1.4.0 更新
+- **评论一键翻译**：每条评论旁显示翻译按钮，点击查看译文，再次点击恢复原文
+- **直播间聊天自动翻译**：默认关闭，可在弹窗或直播间内开启；译文以附加小字显示在原文下方，不修改原文
+- **8 种目标语言**：中文、English、日本語、한국어、Tiếng Việt、Русский、Español、Français
 
-- 新增 TikTok 直播间聊天自动翻译，总开关默认关闭，可在扩展弹窗中开启。
-- 直播消息译文以附加小字显示在原文下方，不直接修改 TikTok 的原始文本节点。
-- 每 1.5 秒扫描当前可见消息；单批去重后最多翻译 30 条，最多允许 2 个批次同时进行，避免请求无限堆积。
-- Google 使用换行合并批量翻译；Gemini、OpenAI 兼容和 Anthropic 使用 JSON 数组批量输入输出，减少请求次数和 token 消耗。
-- 自动跳过纯 emoji、符号、数字，以及大概率已经是中文、日文、韩文或俄文目标语言的消息。
-- 增加 2000 条直播文本 LRU 缓存，重复刷屏内容可直接复用译文。
-- 针对 TikTok 直播虚拟列表的 DOM 节点复用，使用内容指纹重新识别消息，避免旧译文附到新消息上。
-- 直播间内提供临时开关；认证、配置或权限错误会自动暂停直播翻译并显示错误类型。
-- 新增直播开关和状态文案的多语言翻译。
+## 翻译服务商
 
-## v1.3.0 更新
-
-- 所有翻译和连接测试请求改由后台 Service Worker 发起，自定义 OpenAI 兼容端点不再受 TikTok 页面 CORS 限制。
-- 自定义 OpenAI endpoint 在点击“测试连接”时按域名申请访问权限；内置官方端点无需额外授权。
-- 修复 TikTok 单页应用切换视频后评论翻译按钮不再出现的问题。
-- 修复多行评论读取时丢失换行的问题，并改进 Google 翻译对超长文本和中日韩字符 URL 长度的处理。
-- 同一条评论的并发翻译请求会复用同一个 Promise，翻译期间按钮进入 loading 状态，避免重复请求。
-- 认证错误和配置错误不再静默降级到 Google；限流、服务端、网络、超时或内容安全拦截仍可按设置降级。
-- Gemini、OpenAI 兼容和 Anthropic 的最大输出提高到 2048 tokens，并检测输出被截断的情况。
-- 集中管理 TikTok DOM 选择器，限制 `languages.json` 仅对 TikTok 页面可访问。
-
-## 与原版的主要区别
-
-对比基准：原项目 `DuckCIT/TikTok-Comment-Translator`，`manifest.json` 版本 `1.0.1`。
-
-### 架构与权限
-
-- 原版只有 Google 翻译，核心逻辑集中在 `content.js`；本版新增 `providers.js`，把 Google、Gemini、OpenAI 兼容端点和 Anthropic Claude 抽象成统一 provider。
-- 原版的 `background.js` 用于检查 GitHub 上的 `data/version.json` 并通过通知提醒更新；本版不保留该更新检查，也不需要 `tabs` / `notifications` 权限。
-- 本版的 `background.js` 是翻译请求代理：content script 和 popup 通过消息调用后台，由扩展的 host permissions 处理跨域请求。这样自定义 OpenAI 兼容端点无需依赖目标服务器向 TikTok 页面开放 CORS。
-- Google、Gemini、Anthropic 和 OpenAI 官方端点预先声明访问权限；其它自定义 OpenAI endpoint 使用可选权限，并在用户点击“测试连接”时按 origin 请求授权。
-- `data/languages.json` 仅允许 TikTok 页面访问，不再暴露给所有网页。
-- 原版只有一个 `icons/icon.png`；本版提供 `16 / 32 / 48 / 128` 多尺寸图标。
-- 本版新增 `content.css`，把注入到 TikTok 页面里的按钮样式从 JS 中拆出来。
-
-### 翻译服务
-
-- 原版只调用 Google Translate 的公开接口，免费且无需配置。
-- 本版保留 Google 翻译，并新增 Gemini、OpenAI 兼容端点、Anthropic Claude。
-- Gemini / OpenAI 兼容 / Anthropic 都需要用户自己填写 key；插件不内置任何 API key。
-- OpenAI 兼容模式接受自定义 endpoint、model 和 key，可用于 OpenAI 官方、DeepSeek、OpenRouter、SiliconFlow、自部署 vLLM / Ollama 等兼容 OpenAI Chat Completions 协议的服务。
-- LLM provider 共用同一套翻译 prompt，要求保留 emoji、@用户名、#标签，并在原文已经是目标语言时原样返回。
-
-### 评论处理逻辑
-
-- 原版在给每条评论添加按钮前，会先请求一次 Google 接口，借返回值里的语言字段判断原文是否已经是目标语言；如果相同就不显示翻译按钮。
-- 本版移除了这个预检测请求，评论按钮直接显示，减少滚动评论区时的额外 Google 请求。
-- 由于不再预检测，使用 Google provider 时，用户点击按钮后仍会由 Google 自动翻译；使用 LLM provider 时，prompt 会要求“原文已是目标语言则原样返回”。
-- 原版切换目标语言后需要刷新 TikTok 页面才能让 content script 重新读取设置；本版监听 `chrome.storage.onChanged`，切换语言、provider、model、endpoint 或 key 后会实时更新设置并清理缓存。
-- 本版用 `innerText` 读取评论，使 TikTok 通过 `<br>` 渲染的多行评论能保留换行。
-- 本版把评论区观察器固定在 `document.body`，切换视频并替换评论容器后仍会继续为新评论添加按钮。
-- TikTok DOM 选择器集中在 `SELECTORS` 中，网站结构变化时更容易集中维护。
-
-### 直播间翻译
-
-- 直播翻译默认关闭，因为持续翻译会产生 API 请求；开启后适用于 Google、Gemini、OpenAI 兼容和 Anthropic Claude。
-- 直播聊天使用独立的 `live.js`，与视频评论逐条点击翻译的交互互不影响。
-- 译文附加在原消息下方，不替换原文，降低与 TikTok React 重渲染发生冲突的概率。
-- 可见消息按批翻译，并通过文本去重、本地语言过滤、LRU 缓存和并发背压控制 API 调用量。
-- TikTok 直播聊天使用虚拟列表，DOM 节点会重复利用；本版通过消息内容指纹判断节点是否承载了新消息。
-- 弹窗中的总开关会持久保存；直播间页面内还有临时开关，可随时暂停当前页面的自动翻译。
-
-### 性能与错误处理
-
-- 原版缓存是普通 `Map`，没有容量上限；本版改为最多 1000 条的 LRU 缓存，并缓存进行中的 Promise，使同一文本的并发点击只发送一次请求。失败的 Promise 会从缓存删除，允许重试。
-- 本版增加全局并发上限 3，避免连续点击大量评论时同时打出太多请求。
-- 后台 Service Worker 为每次翻译请求设置 20 秒超时。
-- 翻译进行中按钮会进入 loading 状态并拒绝重复点击。
-- 本版提供“LLM 失败时自动降级到 Google 翻译”开关。
-- 认证/配置类错误（例如缺 key、缺 endpoint、缺 model、401/403、模型名或请求参数错误）不会自动降级，以免隐藏真实配置问题。
-- 429 限流、5xx、网络错误、超时、响应解析失败和内容安全拦截会按降级开关回退到 Google。
-- Google 翻译按 URL 编码后的长度切分超长文本，避免中日韩字符编码后导致请求 URL 过长。
-- Gemini、OpenAI 兼容和 Anthropic 的最大输出为 2048 tokens；检测到输出因 token 上限被截断时，会按降级规则处理。
-
-### Popup 与设置
-
-- 原版 popup 只有目标语言下拉框。
-- 本版 popup 增加 provider 选择、不同 provider 的 key/model/endpoint 配置、测试连接按钮和降级开关。
-- “测试连接”和正式翻译使用同一条后台请求链路；自定义 OpenAI endpoint 的访问权限也在该按钮的用户操作中申请。
-- popup 新增直播间评论翻译总开关，默认关闭，并明确提示 LLM 引擎可能持续产生用量。
-- 原版默认目标语言是越南语；本版默认目标语言是中文。
-- 原版目标语言包括越南语、英语、中文、俄语、西班牙语、法语；本版在此基础上新增日语和韩语。
-- 普通偏好保存在 `chrome.storage.sync`；API key 保存在 `chrome.storage.local`，不会随 Google 账号同步到其它设备。
-
-### DOM 写入与样式
-
-- 原版用 `innerHTML` 写入翻译结果和恢复原文。
-- 本版改用 `textContent` 加 `<br>` 节点写入多行文本，避免把翻译结果当 HTML 解析。
-- 本版会读取同一条评论里“回复”按钮的实际渲染样式，并应用到翻译按钮上，让一级/二级评论里的按钮更贴近 TikTok 原生样式。
+| 服务商 | 说明 |
+| --- | --- |
+| Google 翻译 | 免费，无需配置 |
+| Gemini | 需自填 API Key（在 aistudio.google.com/apikey 获取），默认模型 `gemini-2.5-flash` |
+| OpenAI 兼容 | 自填 Endpoint / Model / API Key，支持 OpenAI 官方、DeepSeek、OpenRouter、自部署 vLLM / Ollama 等所有 OpenAI 协议端点 |
+| Anthropic Claude | 需自填 API Key（在 console.anthropic.com 获取），默认模型 `claude-haiku-4-5-20251001` |
 
 ## 安装
 
-1. 打开 `chrome://extensions/`（或 Edge 的扩展页）
-2. 打开"开发者模式"
-3. 选"加载已解压的扩展程序"，选这个文件夹
+1. 打开 `chrome://extensions/`（或 Edge 扩展页），右上角开启「开发者模式」
+2. 点击「加载已解压的扩展程序」，选择本文件夹
+
+更新：用新版本覆盖旧目录后，在扩展页点击刷新图标即可。
+
+## 使用
+
+1. 点击扩展图标打开弹窗，选择目标语言和翻译服务商
+2. LLM 服务商需填写 API Key（模型名可留空用默认值），点「测试连接」验证配置
+3. 打开 TikTok 视频页，点击评论旁的翻译按钮查看译文
+4. 需要直播翻译时，在弹窗打开「直播间评论翻译」开关（默认关闭，持续翻译会产生 API 调用，注意用量）；直播间内也有临时开关可随时暂停
+
+## 注意事项
+
+- API Key 仅保存在当前浏览器本地（`chrome.storage.local`），不会同步到其他设备
+- 自定义 OpenAI 兼容 Endpoint 在首次点击「测试连接」时，浏览器会请求该域名的访问权限
+- 切换设置无需刷新页面，实时生效
+- LLM 翻译失败时可开启「自动降级到 Google 翻译」开关
+
+## 隐私
+
+- 不收集任何数据
+- API Key 只保存在本地，不会发送给除所选翻译服务外的任何服务
 
 ## 文件结构
 
 ```
-manifest.json
-providers.js        # provider 抽象层
-background.js       # 跨域翻译请求、超时、错误分类与降级
-content.js          # 评论页注入逻辑
-live.js             # 直播间聊天批量自动翻译
-content.css         # 按钮与直播译文样式
-popup/
-  popup.html
-  popup.js
-data/
-  languages.json    # UI 文案
-screenshots/
-  demo.gif
-  language-select.png
+manifest.json        # 扩展清单 (Manifest V3)
+providers.js         # 翻译服务商抽象层
+background.js        # 跨域翻译请求与错误处理
+content.js           # 评论区翻译按钮
+live.js              # 直播间批量自动翻译
+content.css          # 页面注入样式
+popup/               # 扩展弹窗（设置界面）
+data/languages.json  # 多语言 UI 文案
 ```
 
 ## 许可
-
-MIT（继承自原项目）。
